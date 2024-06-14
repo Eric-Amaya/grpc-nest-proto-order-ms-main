@@ -54,8 +54,8 @@ export class OrderController {
   }
 
   @GrpcMethod(ORDER_SERVICE_NAME, 'GetAllSales')
-  private getAllSales(): Promise <GetAllSalesResponse> {
-    return this.service.getAllSales();
+  private getAllSales(payload: GetAllSalesRequest): Promise <GetAllSalesResponse> {
+    return this.service.getAllSales(payload);
   }
 
   @GrpcMethod(ORDER_SERVICE_NAME, 'GetSalesByUser')

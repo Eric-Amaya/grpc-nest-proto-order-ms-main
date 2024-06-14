@@ -21,6 +21,6 @@ export class Sale extends BaseEntity {
   @Column( {type: 'int'})
   public totalPrice: number;
 
-  @OneToMany(() => OrderItem, (orderItem) => orderItem.sale, { cascade: true , eager: true})
-  public orders: OrderItem[];
+  @OneToMany(() => OrderItem, (orderItem) => orderItem.sale, { cascade: true })
+  public products: OrderItem[];
 }

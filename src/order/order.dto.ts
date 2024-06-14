@@ -69,7 +69,7 @@ export class CreateSaleDto implements CreateSaleRequest {
   @ValidateNested({ each: true })
   @Type(() => OrderItemDto)
   @IsArray()
-  orders: OrderItemDto[]; 
+  products: OrderItemDto[]; 
 }
 
 export class GetSalesByUserDto implements GetSalesByUserRequest {

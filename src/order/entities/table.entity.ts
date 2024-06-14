@@ -1,4 +1,4 @@
-import { BaseEntity, Column, Entity, OneToOne, PrimaryGeneratedColumn, Unique } from "typeorm";
+import { BaseEntity, Column, Entity, OneToMany, PrimaryGeneratedColumn, Unique } from "typeorm";
 import { Order } from "./order.entity";
 
 @Entity()
@@ -16,7 +16,7 @@ export class Table extends BaseEntity{
   @Column( {type: 'varchar'} )
   public state: string;
 
-  @OneToOne(() => Order, (order) => order.table)
-  public order?: Order;
+  @OneToMany(() => Order, (order) => order.table)
+  public orders?: Order[];
 
 }

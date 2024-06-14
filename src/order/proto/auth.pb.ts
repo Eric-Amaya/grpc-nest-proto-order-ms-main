@@ -78,6 +78,7 @@ export interface User {
   id: number;
   email: string;
   role: string;
+  name: string;
 }
 
 export interface RecoveryRequest {

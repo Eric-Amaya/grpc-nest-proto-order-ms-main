@@ -60,6 +60,7 @@ export interface User {
   id: number;
   email: string;
   role: string;
+  name: string;
 }
 
 export interface Order {
@@ -126,7 +127,7 @@ export interface Sale {
   date: string;
   tip: number;
   totalPrice: number;
-  orders: OrderItem[];
+  products: OrderItem[];
 }
 
 export interface CreateSaleRequest {
@@ -135,7 +136,7 @@ export interface CreateSaleRequest {
   date: string;
   tip: number;
   totalPrice: number;
-  orders: OrderItem[];
+  products: OrderItem[];
 }
 
 export interface CreateSaleResponse {
