@@ -1,6 +1,6 @@
-import { IsArray, IsInt, ValidateNested } from 'class-validator';
+import { IsArray, IsInt, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import { CreateOrderRequest } from './proto/order.pb';
+import { CreateOrderRequest, CreateSaleRequest, CreateTableRequest, GetSalesByDateRequest, GetSalesByUserRequest, GetTablesByNameRequest, UpdateTableStateRequest } from './proto/order.pb';
 
 class OrderItemDto {
   @IsInt()
@@ -19,6 +19,65 @@ export class CreateOrderRequestDto implements CreateOrderRequest {
   @IsInt()
   userId: number;
 
+  @IsString()
+  nameTable: string;
+}
+
+export class CreateTableRequestDto implements CreateTableRequest{
+  @IsString()
+  name: string;
+
   @IsInt()
-  tableNumber: number;
+  quantity: number;
+
+  @IsString()
+  state: string;
+}
+
+export class GetTablesByNameDto implements GetTablesByNameRequest {
+  @IsString()
+  name: string;
+}
+
+export class UpdateTableStateDto implements UpdateTableStateRequest {
+  @IsInt()
+  id: number;
+
+  @IsInt()
+  quantity: number;
+
+  @IsString()
+  state: string;
+}
+
+export class CreateSaleDto implements CreateSaleRequest {
+  @IsString()
+  userName: string;
+
+  @IsString()
+  tableName: string;
+
+  @IsString()
+  date: string;
+
+  @IsInt()
+  tip: number;
+
+  @IsInt()
+  totalPrice: number;
+
+  @ValidateNested({ each: true })
+  @Type(() => OrderItemDto)
+  @IsArray()
+  orders: OrderItemDto[]; 
+}
+
+export class GetSalesByUserDto implements GetSalesByUserRequest {
+  @IsString()
+  userName: string;
+}
+
+export class GetSalesByDateDto implements GetSalesByDateRequest {
+  @IsString()
+  date: string;
 }

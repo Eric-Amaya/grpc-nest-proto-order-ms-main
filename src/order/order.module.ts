@@ -3,20 +3,23 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { OrderController } from './order.controller';
-import { Order, OrderItem } from './order.entity';
 import { OrderService } from './order.service';
 import { AUTH_SERVICE_NAME } from './proto/auth.pb';
 import { PRODUCT_SERVICE_NAME } from './proto/product.pb';
+import { Order } from './entities/order.entity';
+import { OrderItem } from './entities/orderItem.entity';
+import { Table } from './entities/table.entity';
+import { Sale } from './entities/sale.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Order, OrderItem]),
+    TypeOrmModule.forFeature([Order, OrderItem, Table, Sale]),
     ClientsModule.register([
       {
         name: PRODUCT_SERVICE_NAME,
         transport: Transport.GRPC,
         options: {
-          url: process.env.PRODUCT_SERVICE_URL, // Adjust the URL as necessary
+          url: process.env.PRODUCT_SERVICE_URL, 
           package: 'product',
           protoPath: join(__dirname, '../../node_modules/grpc-nest-proto/proto/product.proto'),
         },
@@ -25,7 +28,7 @@ import { PRODUCT_SERVICE_NAME } from './proto/product.pb';
         name: AUTH_SERVICE_NAME,
         transport: Transport.GRPC,
         options: {
-          url: process.env.AUTH_SERVICE_URL, // Adjust the URL as necessary
+          url: process.env.AUTH_SERVICE_URL, 
           package: 'auth',
           protoPath: join(__dirname, '../../node_modules/grpc-nest-proto/proto/auth.proto'),
         },

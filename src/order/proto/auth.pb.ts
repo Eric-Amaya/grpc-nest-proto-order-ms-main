@@ -11,6 +11,8 @@ import { Observable } from "rxjs";
 export const protobufPackage = "auth";
 
 export interface RegisterRequest {
+  name: string;
+  rut: string;
   email: string;
   password: string;
 }
@@ -39,6 +41,7 @@ export interface ValidateResponse {
   status: number;
   error: string[];
   userId: number;
+  role: string;
 }
 
 export interface EditRequest {
@@ -77,6 +80,37 @@ export interface User {
   role: string;
 }
 
+export interface RecoveryRequest {
+  email: string;
+}
+
+export interface RecoveryResponse {
+  status: number;
+  error: string[];
+}
+
+export interface VerifyCodeRequest {
+  email: string;
+  code: string;
+}
+
+export interface VerifyCodeResponse {
+  status: number;
+  error: string[];
+}
+
+export interface ChangePasswordRequest {
+  email: string;
+  code: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface ChangePasswordResponse {
+  status: number;
+  error: string[];
+}
+
 export const AUTH_PACKAGE_NAME = "auth";
 
 export interface AuthServiceClient {
@@ -91,6 +125,12 @@ export interface AuthServiceClient {
   remove(request: RemoveRequest): Observable<RemoveResponse>;
 
   getUser(request: GetUserRequest): Observable<GetUserResponse>;
+
+  recovery(request: RecoveryRequest): Observable<RecoveryResponse>;
+
+  changePassword(request: ChangePasswordRequest): Observable<ChangePasswordResponse>;
+
+  verifyCode(request: VerifyCodeRequest): Observable<VerifyCodeResponse>;
 }
 
 export interface AuthServiceController {
@@ -105,11 +145,31 @@ export interface AuthServiceController {
   remove(request: RemoveRequest): Promise<RemoveResponse> | Observable<RemoveResponse> | RemoveResponse;
 
   getUser(request: GetUserRequest): Promise<GetUserResponse> | Observable<GetUserResponse> | GetUserResponse;
+
+  recovery(request: RecoveryRequest): Promise<RecoveryResponse> | Observable<RecoveryResponse> | RecoveryResponse;
+
+  changePassword(
+    request: ChangePasswordRequest,
+  ): Promise<ChangePasswordResponse> | Observable<ChangePasswordResponse> | ChangePasswordResponse;
+
+  verifyCode(
+    request: VerifyCodeRequest,
+  ): Promise<VerifyCodeResponse> | Observable<VerifyCodeResponse> | VerifyCodeResponse;
 }
 
 export function AuthServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["register", "login", "validate", "edit", "remove", "getUser"];
+    const grpcMethods: string[] = [
+      "register",
+      "login",
+      "validate",
+      "edit",
+      "remove",
+      "getUser",
+      "recovery",
+      "changePassword",
+      "verifyCode",
+    ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("AuthService", method)(constructor.prototype[method], method, descriptor);

@@ -1,12 +1,16 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ClientGrpc } from '@nestjs/microservices';
-import { Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
 import { lastValueFrom } from 'rxjs';
-import { CreateOrderRequest, CreateOrderResponse, GetAllOrdersRequest, GetAllOrdersResponse, GetOrderRequest, GetOrderResponse, GetUserRequest, GetUserResponse, User, Order as OrderProto } from './proto/order.pb';
-import { Order, OrderItem } from './order.entity';
+import { CreateOrderResponse, GetAllOrdersRequest, GetAllOrdersResponse, GetOrderRequest, GetOrderResponse, GetUserRequest, GetUserResponse, User, Order as OrderProto, Table as TableProto, CreateTableResponse, GetTablesByNameResponse, GetAllTablesResponse, UpdateTableStateResponse, CreateSaleResponse, GetAllSalesResponse, GetSalesByDateResponse, GetSalesByUserResponse } from './proto/order.pb';
 import { ProductServiceClient, PRODUCT_SERVICE_NAME, FindOneRequest, FindOneResponse } from './proto/product.pb';
 import { AuthServiceClient, AUTH_SERVICE_NAME, GetUserRequest as AuthGetUserRequest, GetUserResponse as AuthGetUserResponse } from './proto/auth.pb';
+import { CreateOrderRequestDto, CreateSaleDto, CreateTableRequestDto, GetSalesByDateDto, GetSalesByUserDto, GetTablesByNameDto, UpdateTableStateDto } from './order.dto';
+import { Order } from './entities/order.entity';
+import { OrderItem } from './entities/orderItem.entity';
+import { Table } from './entities/table.entity';
+import { Sale } from './entities/sale.entity';
 
 @Injectable()
 export class OrderService {
@@ -15,6 +19,12 @@ export class OrderService {
 
   @InjectRepository(OrderItem)
   private readonly itemRepository: Repository<OrderItem>;
+
+  @InjectRepository(Table)
+  private readonly tableRepository: Repository <Table>;
+
+  @InjectRepository(Sale)
+  private readonly saleRepository: Repository <Sale>;
 
   private productService: ProductServiceClient;
   private userService: AuthServiceClient;
@@ -30,7 +40,60 @@ export class OrderService {
     this.userService = this.userClient.getService<AuthServiceClient>(AUTH_SERVICE_NAME);
   }
 
-  public async createOrder({ products, userId, tableNumber }: CreateOrderRequest): Promise<CreateOrderResponse> {
+  public async createTable (table: CreateTableRequestDto): Promise <CreateTableResponse> {
+    await this.tableRepository.save(table);    
+    
+    return { status: HttpStatus.CREATED, errors: null};
+  }
+
+  public async getTablesByName ( {name} : GetTablesByNameDto): Promise <GetTablesByNameResponse> {
+    const table: Table = await this.tableRepository.findOne({
+      where: {
+        name,
+      },
+    });
+
+    if(!table) {
+      return { status: HttpStatus.NOT_FOUND, errors: [`Table with name ${name} not found`], table: null }
+    }
+
+    const tableProto: TableProto = {
+      id: table.id,
+      name: table.name,
+      quantity: table.quantity,
+      state: table.state,
+    };
+    
+    return { status: HttpStatus.OK, errors: null, table: tableProto};
+  }
+
+  public async getAllTables () : Promise <GetAllTablesResponse>{
+
+    const tables: Table[] = await this.tableRepository.find();
+
+    if(!tables) {
+      return { status: HttpStatus.NOT_FOUND, errors: [`Tables are not found`], tables: null }
+    }
+
+    return { status: HttpStatus.OK, errors: null, tables: tables};
+  }
+
+  public async updateTableState ( {id,quantity,state}: UpdateTableStateDto ) : Promise <UpdateTableStateResponse> {
+    const table: Table = await this.tableRepository.findOne( { where: {id} } );
+
+    if(!table) {
+      return { status: HttpStatus.NOT_FOUND, errors: [`Table with id ${id} is not found`]}
+    }
+
+    table.quantity = quantity;
+    table.state = state;
+    
+    await this.tableRepository.save(table);
+
+    return { status: HttpStatus.OK, errors: null};
+  }
+
+  public async createOrder({ products, userId, nameTable }: CreateOrderRequestDto): Promise<CreateOrderResponse> {
     const userRequest: AuthGetUserRequest = { userId };
     const userResponse: AuthGetUserResponse = await lastValueFrom(this.userService.getUser(userRequest));
     if (userResponse.status !== HttpStatus.OK) {
@@ -39,7 +102,8 @@ export class OrderService {
 
     const order = new Order();
     order.userId = userId;
-    order.tableNumber = tableNumber;
+    const table = await this.tableRepository.findOne({ where: {name: nameTable}})
+    order.table = table;
 
     const orderItems: OrderItem[] = [];
     let totalPrice = 0;
@@ -88,7 +152,7 @@ export class OrderService {
     const orderProto: OrderProto = {
       id: order.id,
       userId: order.userId,
-      tableNumber: order.tableNumber,
+      table: order.table,
       totalPrice: order.totalPrice,
       items: order.items,
       user,
@@ -126,5 +190,49 @@ export class OrderService {
     }
 
     return { status: HttpStatus.OK, errors: null, user: userResponse.user };
+  }
+
+  public async createSale (sale: CreateSaleDto): Promise <CreateSaleResponse> {
+    await this.saleRepository.save(sale);
+
+    return { status: HttpStatus.CREATED, errors: null};
+  }
+
+  public async getAllSales (): Promise <GetAllSalesResponse> {
+    const sales: Sale[] = await this.saleRepository.find();
+
+    if(!sales) {
+      return { status: HttpStatus.NOT_FOUND, errors: [`Sales are not found`], sales: null }
+    }
+    
+    return { status: HttpStatus.OK, errors: null, sales: sales};
+  }
+
+  public async getSalesByUser ({userName}: GetSalesByUserDto): Promise <GetSalesByUserResponse> {
+    const sales: Sale[] = await this.saleRepository.find({
+      where: {
+        userName: Like(`%${userName}%`),
+      },
+    });
+    
+    if(!sales) {
+      return { status: HttpStatus.NOT_FOUND, errors: [`Sales are not found`], sales: null }
+    }
+    
+    return { status: HttpStatus.OK, errors: null, sales: sales};
+  }
+
+  public async getSalesByDate ({date}: GetSalesByDateDto): Promise <GetSalesByUserResponse> {
+    const sales: Sale[] = await this.saleRepository.find({
+      where: {
+        date: Like(`%${date}%`),
+      },
+    });
+    
+    if(!sales) {
+      return { status: HttpStatus.NOT_FOUND, errors: [`Sales are not found`], sales: null }
+    }
+    
+    return { status: HttpStatus.OK, errors: null, sales: sales};
   }
 }

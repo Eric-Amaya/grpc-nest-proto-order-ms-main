@@ -13,7 +13,7 @@ export const protobufPackage = "order";
 export interface CreateOrderRequest {
   products: OrderItem[];
   userId: number;
-  tableNumber: number;
+  nameTable: string;
 }
 
 export interface OrderItem {
@@ -65,10 +65,111 @@ export interface User {
 export interface Order {
   id: number;
   userId: number;
-  tableNumber: number;
+  table: Table | undefined;
   totalPrice: number;
   items: OrderItem[];
   user: User | undefined;
+}
+
+export interface Table {
+  id: number;
+  name: string;
+  quantity: number;
+  state: string;
+}
+
+export interface CreateTableRequest {
+  name: string;
+  quantity: number;
+  state: string;
+}
+
+export interface CreateTableResponse {
+  status: number;
+  errors: string[];
+}
+
+export interface GetAllTablesRequest {
+}
+
+export interface GetAllTablesResponse {
+  status: number;
+  errors: string[];
+  tables: Table[];
+}
+
+export interface GetTablesByNameRequest {
+  name: string;
+}
+
+export interface GetTablesByNameResponse {
+  status: number;
+  errors: string[];
+  table: Table | undefined;
+}
+
+export interface UpdateTableStateRequest {
+  id: number;
+  quantity: number;
+  state: string;
+}
+
+export interface UpdateTableStateResponse {
+  status: number;
+  errors: string[];
+}
+
+export interface Sale {
+  id: number;
+  userName: string;
+  tableName: string;
+  date: string;
+  tip: number;
+  totalPrice: number;
+  orders: OrderItem[];
+}
+
+export interface CreateSaleRequest {
+  userName: string;
+  tableName: string;
+  date: string;
+  tip: number;
+  totalPrice: number;
+  orders: OrderItem[];
+}
+
+export interface CreateSaleResponse {
+  status: number;
+  errors: string[];
+}
+
+export interface GetAllSalesRequest {
+}
+
+export interface GetAllSalesResponse {
+  status: number;
+  errors: string[];
+  sales: Sale[];
+}
+
+export interface GetSalesByUserRequest {
+  userName: string;
+}
+
+export interface GetSalesByUserResponse {
+  status: number;
+  errors: string[];
+  sales: Sale[];
+}
+
+export interface GetSalesByDateRequest {
+  date: string;
+}
+
+export interface GetSalesByDateResponse {
+  status: number;
+  errors: string[];
+  sales: Sale[];
 }
 
 export const ORDER_PACKAGE_NAME = "order";
@@ -81,6 +182,22 @@ export interface OrderServiceClient {
   getOrder(request: GetOrderRequest): Observable<GetOrderResponse>;
 
   getAllOrders(request: GetAllOrdersRequest): Observable<GetAllOrdersResponse>;
+
+  createTable(request: CreateTableRequest): Observable<CreateTableResponse>;
+
+  getAllTables(request: GetAllTablesRequest): Observable<GetAllTablesResponse>;
+
+  getTablesByName(request: GetTablesByNameRequest): Observable<GetTablesByNameResponse>;
+
+  updateTableState(request: UpdateTableStateRequest): Observable<UpdateTableStateResponse>;
+
+  createSale(request: CreateSaleRequest): Observable<CreateSaleResponse>;
+
+  getAllSales(request: GetAllSalesRequest): Observable<GetAllSalesResponse>;
+
+  getSalesByUser(request: GetSalesByUserRequest): Observable<GetSalesByUserResponse>;
+
+  getSalesByDate(request: GetSalesByDateRequest): Observable<GetSalesByDateResponse>;
 }
 
 export interface OrderServiceController {
@@ -95,11 +212,56 @@ export interface OrderServiceController {
   getAllOrders(
     request: GetAllOrdersRequest,
   ): Promise<GetAllOrdersResponse> | Observable<GetAllOrdersResponse> | GetAllOrdersResponse;
+
+  createTable(
+    request: CreateTableRequest,
+  ): Promise<CreateTableResponse> | Observable<CreateTableResponse> | CreateTableResponse;
+
+  getAllTables(
+    request: GetAllTablesRequest,
+  ): Promise<GetAllTablesResponse> | Observable<GetAllTablesResponse> | GetAllTablesResponse;
+
+  getTablesByName(
+    request: GetTablesByNameRequest,
+  ): Promise<GetTablesByNameResponse> | Observable<GetTablesByNameResponse> | GetTablesByNameResponse;
+
+  updateTableState(
+    request: UpdateTableStateRequest,
+  ): Promise<UpdateTableStateResponse> | Observable<UpdateTableStateResponse> | UpdateTableStateResponse;
+
+  createSale(
+    request: CreateSaleRequest,
+  ): Promise<CreateSaleResponse> | Observable<CreateSaleResponse> | CreateSaleResponse;
+
+  getAllSales(
+    request: GetAllSalesRequest,
+  ): Promise<GetAllSalesResponse> | Observable<GetAllSalesResponse> | GetAllSalesResponse;
+
+  getSalesByUser(
+    request: GetSalesByUserRequest,
+  ): Promise<GetSalesByUserResponse> | Observable<GetSalesByUserResponse> | GetSalesByUserResponse;
+
+  getSalesByDate(
+    request: GetSalesByDateRequest,
+  ): Promise<GetSalesByDateResponse> | Observable<GetSalesByDateResponse> | GetSalesByDateResponse;
 }
 
 export function OrderServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["createOrder", "getUser", "getOrder", "getAllOrders"];
+    const grpcMethods: string[] = [
+      "createOrder",
+      "getUser",
+      "getOrder",
+      "getAllOrders",
+      "createTable",
+      "getAllTables",
+      "getTablesByName",
+      "updateTableState",
+      "createSale",
+      "getAllSales",
+      "getSalesByUser",
+      "getSalesByDate",
+    ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("OrderService", method)(constructor.prototype[method], method, descriptor);
