@@ -1,13 +1,11 @@
 # Use an official Node.js runtime as the base image
-FROM node:20
-
-RUN apt-get update \
- && DEBIAN_FRONTEND=noninteractive \
-    apt-get install --no-install-recommends --assume-yes \
-      protobuf-compiler
+FROM node:lts-alpine
 
 # Set the working directory in the container to /app
 WORKDIR /app
+
+# Instala el compilador protobuf
+RUN apk update && apk add --no-cache git protobuf
 
 # Copy package.json and package-lock.json into the directory /app in the container
 COPY package*.json ./
