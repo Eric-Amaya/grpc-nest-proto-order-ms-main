@@ -10,6 +10,7 @@ import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/orderItem.entity';
 import { Table } from './entities/table.entity';
 import { Sale } from './entities/sale.entity';
+import { EmailService } from './extra/send_email';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { Sale } from './entities/sale.entity';
     ]),
   ],
   controllers: [OrderController],
-  providers: [OrderService],
+  providers: [OrderService, EmailService],
+  exports: [EmailService]
 })
 export class OrderModule {}

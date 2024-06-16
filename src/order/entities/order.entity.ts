@@ -22,4 +22,6 @@ export class Order extends BaseEntity {
 
   public user?: User;
 
+  @Column ({ type: 'varchar' , nullable: true })
+  public email: string;
 }

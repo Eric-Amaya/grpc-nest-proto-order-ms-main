@@ -1,4 +1,4 @@
-import { IsArray, IsInt, IsString, ValidateNested } from 'class-validator';
+import { IsArray, IsEmail, IsInt, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { CreateOrderRequest, CreateSaleRequest, CreateTableRequest, GetSalesByDateRequest, GetSalesByUserRequest, GetTablesByNameRequest, UpdateTableStateRequest } from './proto/order.pb';
 
@@ -21,6 +21,10 @@ export class CreateOrderRequestDto implements CreateOrderRequest {
 
   @IsString()
   nameTable: string;
+
+  @IsString()
+  @IsEmail()
+  email: string;
 }
 
 export class CreateTableRequestDto implements CreateTableRequest{
@@ -70,6 +74,10 @@ export class CreateSaleDto implements CreateSaleRequest {
   @Type(() => OrderItemDto)
   @IsArray()
   products: OrderItemDto[]; 
+
+  @IsString()
+  @IsEmail()
+  email: string;
 }
 
 export class GetSalesByUserDto implements GetSalesByUserRequest {
@@ -81,3 +89,5 @@ export class GetSalesByDateDto implements GetSalesByDateRequest {
   @IsString()
   date: string;
 }
+
+

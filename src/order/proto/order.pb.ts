@@ -14,6 +14,7 @@ export interface CreateOrderRequest {
   products: OrderItem[];
   userId: number;
   nameTable: string;
+  email: string;
 }
 
 export interface OrderItem {
@@ -70,6 +71,7 @@ export interface Order {
   totalPrice: number;
   items: OrderItem[];
   user: User | undefined;
+  email: string;
 }
 
 export interface Table {
@@ -137,6 +139,7 @@ export interface CreateSaleRequest {
   tip: number;
   totalPrice: number;
   products: OrderItem[];
+  email: string;
 }
 
 export interface CreateSaleResponse {
