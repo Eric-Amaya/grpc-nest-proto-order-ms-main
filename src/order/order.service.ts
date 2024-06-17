@@ -128,10 +128,14 @@ export class OrderService {
         const orderItem = new OrderItem();
         orderItem.productId = product.productId;
         orderItem.quantity = product.quantity;
+        orderItem.modifications = product.modifications;
+        orderItem.productName = findOneResponse.data.name;
+        orderItem.pricePerUnit = findOneResponse.data.price;
+        orderItem.totalPrice = findOneResponse.data.price * product.quantity;
         orderItem.order = order;
         orderItems.push(orderItem);
   
-        totalPrice += findOneResponse.data.price * product.quantity;
+        totalPrice += orderItem.totalPrice;
       }
   
       order.items = orderItems;
@@ -168,7 +172,19 @@ export class OrderService {
       userId: order.userId,
       table: order.table,
       totalPrice: order.totalPrice,
-      items: order.items,
+      items: await Promise.all(order.items.map(async item => {
+        const findOneRequest: FindOneRequest = { id: item.productId };
+        const findOneResponse: FindOneResponse = await lastValueFrom(this.productService.findOne(findOneRequest));
+
+        return {
+          productId: item.productId,
+          quantity: item.quantity,
+          modifications: item.modifications,
+          productName: findOneResponse.data.name,
+          pricePerUnit: findOneResponse.data.price,
+          totalPrice: findOneResponse.data.price * item.quantity
+        }
+      })),
       user,
       email: order.email
     };
