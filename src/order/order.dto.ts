@@ -8,6 +8,18 @@ class OrderItemDto {
 
   @IsInt()
   quantity: number;
+
+  @IsString()
+  modifications: string;
+
+  @IsString()
+  productName: string;
+
+  @IsInt()
+  pricePerUnit: number;
+
+  @IsInt()
+  totalPrice: number;
 }
 
 export class CreateOrderRequestDto implements CreateOrderRequest {
