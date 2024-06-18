@@ -16,6 +16,9 @@ export class Table extends BaseEntity{
   @Column( {type: 'varchar'} )
   public state: string;
 
+  @Column( {type: 'int', nullable: true })
+  public activeOrderId: number;
+
   @OneToMany(() => Order, (order) => order.table)
   public orders?: Order[];
 
