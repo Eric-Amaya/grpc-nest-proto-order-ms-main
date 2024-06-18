@@ -11,7 +11,7 @@ export class OrderItem extends BaseEntity {
   @Column({ type: 'int' })
   public productId: number;
 
-  @Column({ type: 'varchar' })
+  @Column({ type: 'varchar' , default: ''})
   modifications: string;
 
   @Column({ type: 'varchar' })
