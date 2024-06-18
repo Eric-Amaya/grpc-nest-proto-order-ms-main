@@ -25,7 +25,6 @@ import {
   GetAllSalesRequest,
   DeleteOrderItemRequest,
   DeleteOrderItemResponse,
-  UpdateOrderRequest,
   UpdateOrderResponse,
 } from './proto/order.pb';
 import {
@@ -48,6 +47,7 @@ import {
   GetSalesByDateDto,
   GetSalesByUserDto,
   GetTablesByNameDto,
+  UpdateOrderDto,
   UpdateTableStateDto,
 } from './order.dto';
 import { Order } from './entities/order.entity';
@@ -102,8 +102,8 @@ export class OrderService {
   public async createTable(
     table: CreateTableRequestDto,
   ): Promise<CreateTableResponse> {
-    await this.tableRepository.save(table);
-
+    await this.tableRepository.save(table);    
+   
     return { status: HttpStatus.CREATED, errors: null };
   }
 
@@ -129,8 +129,9 @@ export class OrderService {
       name: table.name,
       quantity: table.quantity,
       state: table.state,
+      activeOrderId: table.activeOrderId
     };
-
+    
     return { status: HttpStatus.OK, errors: null, table: tableProto };
   }
 
@@ -152,6 +153,7 @@ export class OrderService {
     id,
     quantity,
     state,
+    activeOrderId
   }: UpdateTableStateDto): Promise<UpdateTableStateResponse> {
     const table: Table = await this.tableRepository.findOne({ where: { id } });
 
@@ -164,7 +166,8 @@ export class OrderService {
 
     table.quantity = quantity;
     table.state = state;
-
+    table.activeOrderId = activeOrderId;
+    
     await this.tableRepository.save(table);
 
     return { status: HttpStatus.OK, errors: null };
@@ -188,7 +191,6 @@ export class OrderService {
           id: null,
         };
       }
-
       const table = await this.tableRepository.findOne({
         where: { name: nameTable },
       });
@@ -280,17 +282,17 @@ export class OrderService {
       totalPrice: order.totalPrice,
       items: await Promise.all(
         order.items.map(async (item) => {
-          const findOneRequest: FindOneRequest = { id: item.productId };
-          const findOneResponse: FindOneResponse = await lastValueFrom(
-            this.productService.findOne(findOneRequest),
-          );
+        const findOneRequest: FindOneRequest = { id: item.productId };
+        const findOneResponse: FindOneResponse = await lastValueFrom(
+          this.productService.findOne(findOneRequest),
+        );
 
-          return {
-            productId: item.productId,
-            quantity: item.quantity,
-            modifications: item.modifications,
-            productName: findOneResponse.data.name,
-            pricePerUnit: findOneResponse.data.price,
+        return {
+          productId: item.productId,
+          quantity: item.quantity,
+          modifications: item.modifications,
+          productName: findOneResponse.data.name,
+          pricePerUnit: findOneResponse.data.price,
             totalPrice: findOneResponse.data.price * item.quantity,
           };
         }),
@@ -304,10 +306,11 @@ export class OrderService {
 
   public async updateOrder({
     orderId,
+    products,
     userId,
     nameTable,
     email,
-  }: UpdateOrderRequest): Promise<UpdateOrderResponse> {
+  }: UpdateOrderDto): Promise<UpdateOrderResponse> {
     const order = await this.repository.findOne({
       where: { id: orderId },
       relations: ['table', 'items'],
@@ -317,7 +320,6 @@ export class OrderService {
       return {
         status: HttpStatus.NOT_FOUND,
         errors: [`Order with ID ${orderId} not found`],
-        order: null,
       };
     }
 
@@ -330,7 +332,6 @@ export class OrderService {
       return {
         status: HttpStatus.BAD_REQUEST,
         errors: [`User with ID ${userId} not found`],
-        order: null,
       };
     }
 
@@ -342,7 +343,6 @@ export class OrderService {
       return {
         status: HttpStatus.NOT_FOUND,
         errors: [`Table ${nameTable} not found`],
-        order: null,
       };
     }
 
@@ -350,11 +350,40 @@ export class OrderService {
     order.table = table;
     order.email = email;
 
+    const orderItems: OrderItem[] = [];
+    let totalPrice = 0;
+
+    for (const product of products) {
+      const findOneRequest: FindOneRequest = { id: product.productId };
+      const findOneResponse: FindOneResponse = await lastValueFrom(
+        this.productService.findOne(findOneRequest),
+      );
+      if (findOneResponse.status !== HttpStatus.OK) {
+        return {
+          status: HttpStatus.BAD_REQUEST,
+          errors: [`Product with ID ${product.productId} not found`],
+        };
+      }
+
+      const orderItem = new OrderItem();
+      orderItem.productId = product.productId;
+      orderItem.quantity = product.quantity;
+      orderItem.modifications = product.modifications;
+      orderItem.productName = findOneResponse.data.name;
+      orderItem.pricePerUnit = findOneResponse.data.price;
+      orderItem.totalPrice = findOneResponse.data.price * product.quantity;
+      orderItem.order = order;
+      orderItems.push(orderItem);
+
+      totalPrice += orderItem.totalPrice;
+    }
+
+    order.items = orderItems;
+    order.totalPrice = totalPrice;
+
     await this.repository.save(order);
 
-    const updatedOrder = await this.getOrder({ orderId });
-
-    return { status: HttpStatus.OK, errors: null, order: updatedOrder.order };
+    return { status: HttpStatus.CREATED, errors: null, }; 
   }
 
   public async getAllOrders(
@@ -485,8 +514,10 @@ export class OrderService {
       .map(
         (product) => `
       <tr>
-        <td>Producto ${product.productId}</td>
+        <td>${product.productName}</td>
         <td>${product.quantity}</td>
+        <td>${product.pricePerUnit}</td>
+        <td>${product.totalPrice}</td>
       </tr>
     `,
       )
@@ -577,6 +608,8 @@ export class OrderService {
                 <tr>
                   <th>Producto</th>
                   <th>Cantidad</th>
+                  <th>Precio (c/u)</th>
+                  <th>Total</th>
                 </tr>
               </thead>
               <tbody>
@@ -670,4 +703,4 @@ export class OrderService {
 
     return { status: HttpStatus.OK, errors: null };
   }
-}
+
