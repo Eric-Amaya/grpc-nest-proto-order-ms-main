@@ -180,6 +180,29 @@ export interface GetSalesByDateResponse {
   sales: Sale[];
 }
 
+export interface DeleteOrderItemRequest {
+  orderId: number;
+  productId: number;
+}
+
+export interface DeleteOrderItemResponse {
+  status: number;
+  errors: string[];
+}
+
+export interface UpdateOrderRequest {
+  orderId: number;
+  userId: number;
+  nameTable: string;
+  email: string;
+}
+
+export interface UpdateOrderResponse {
+  status: number;
+  errors: string[];
+  order: Order | undefined;
+}
+
 export const ORDER_PACKAGE_NAME = "order";
 
 export interface OrderServiceClient {
@@ -206,6 +229,10 @@ export interface OrderServiceClient {
   getSalesByUser(request: GetSalesByUserRequest): Observable<GetSalesByUserResponse>;
 
   getSalesByDate(request: GetSalesByDateRequest): Observable<GetSalesByDateResponse>;
+
+  deleteOrderItem(request: DeleteOrderItemRequest): Observable<DeleteOrderItemResponse>;
+
+  updateOrder(request: UpdateOrderRequest): Observable<UpdateOrderResponse>;
 }
 
 export interface OrderServiceController {
@@ -252,6 +279,14 @@ export interface OrderServiceController {
   getSalesByDate(
     request: GetSalesByDateRequest,
   ): Promise<GetSalesByDateResponse> | Observable<GetSalesByDateResponse> | GetSalesByDateResponse;
+
+  deleteOrderItem(
+    request: DeleteOrderItemRequest,
+  ): Promise<DeleteOrderItemResponse> | Observable<DeleteOrderItemResponse> | DeleteOrderItemResponse;
+
+  updateOrder(
+    request: UpdateOrderRequest,
+  ): Promise<UpdateOrderResponse> | Observable<UpdateOrderResponse> | UpdateOrderResponse;
 }
 
 export function OrderServiceControllerMethods() {
@@ -269,6 +304,8 @@ export function OrderServiceControllerMethods() {
       "getAllSales",
       "getSalesByUser",
       "getSalesByDate",
+      "deleteOrderItem",
+      "updateOrder",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
