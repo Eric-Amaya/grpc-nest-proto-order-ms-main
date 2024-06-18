@@ -1,17 +1,70 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ClientGrpc } from '@nestjs/microservices';
-import { Like, Repository } from 'typeorm';
+import { Any, Like, Repository } from 'typeorm';
 import { lastValueFrom } from 'rxjs';
-import { CreateOrderResponse, GetAllOrdersRequest, GetAllOrdersResponse, GetOrderRequest, GetOrderResponse, GetUserRequest, GetUserResponse, User, Order as OrderProto, Table as TableProto, CreateTableResponse, GetTablesByNameResponse, GetAllTablesResponse, UpdateTableStateResponse, CreateSaleResponse, GetAllSalesResponse, GetSalesByDateResponse, GetSalesByUserResponse, GetAllSalesRequest } from './proto/order.pb';
-import { ProductServiceClient, PRODUCT_SERVICE_NAME, FindOneRequest, FindOneResponse } from './proto/product.pb';
-import { AuthServiceClient, AUTH_SERVICE_NAME, GetUserRequest as AuthGetUserRequest, GetUserResponse as AuthGetUserResponse } from './proto/auth.pb';
-import { CreateOrderRequestDto, CreateSaleDto, CreateTableRequestDto, GetSalesByDateDto, GetSalesByUserDto, GetTablesByNameDto, UpdateTableStateDto } from './order.dto';
+import {
+  CreateOrderResponse,
+  GetAllOrdersRequest,
+  GetAllOrdersResponse,
+  GetOrderRequest,
+  GetOrderResponse,
+  GetUserRequest,
+  GetUserResponse,
+  User,
+  Order as OrderProto,
+  Table as TableProto,
+  CreateTableResponse,
+  GetTablesByNameResponse,
+  GetAllTablesResponse,
+  UpdateTableStateResponse,
+  CreateSaleResponse,
+  GetAllSalesResponse,
+  GetSalesByDateResponse,
+  GetSalesByUserResponse,
+  GetAllSalesRequest,
+  DeleteOrderItemRequest,
+  DeleteOrderItemResponse,
+  UpdateOrderRequest,
+  UpdateOrderResponse,
+} from './proto/order.pb';
+import {
+  ProductServiceClient,
+  PRODUCT_SERVICE_NAME,
+  FindOneRequest,
+  FindOneResponse,
+  UpdateProductRequest,
+} from './proto/product.pb';
+import {
+  AuthServiceClient,
+  AUTH_SERVICE_NAME,
+  GetUserRequest as AuthGetUserRequest,
+  GetUserResponse as AuthGetUserResponse,
+} from './proto/auth.pb';
+import {
+  CreateOrderRequestDto,
+  CreateSaleDto,
+  CreateTableRequestDto,
+  GetSalesByDateDto,
+  GetSalesByUserDto,
+  GetTablesByNameDto,
+  UpdateTableStateDto,
+} from './order.dto';
 import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/orderItem.entity';
 import { Table } from './entities/table.entity';
 import { Sale } from './entities/sale.entity';
 import { EmailService } from './extra/send_email';
+
+interface Product {
+  id: number;
+  name: string;
+  sku: string;
+  stock: number;
+  price: number;
+  category: string;
+  description: string;
+}
 
 @Injectable()
 export class OrderService {
@@ -22,10 +75,10 @@ export class OrderService {
   private readonly itemRepository: Repository<OrderItem>;
 
   @InjectRepository(Table)
-  private readonly tableRepository: Repository <Table>;
+  private readonly tableRepository: Repository<Table>;
 
   @InjectRepository(Sale)
-  private readonly saleRepository: Repository <Sale>;
+  private readonly saleRepository: Repository<Sale>;
 
   private productService: ProductServiceClient;
   private userService: AuthServiceClient;
@@ -40,25 +93,35 @@ export class OrderService {
   private readonly emailService: EmailService;
 
   onModuleInit() {
-    this.productService = this.productClient.getService<ProductServiceClient>(PRODUCT_SERVICE_NAME);
-    this.userService = this.userClient.getService<AuthServiceClient>(AUTH_SERVICE_NAME);
+    this.productService =
+      this.productClient.getService<ProductServiceClient>(PRODUCT_SERVICE_NAME);
+    this.userService =
+      this.userClient.getService<AuthServiceClient>(AUTH_SERVICE_NAME);
   }
 
-  public async createTable (table: CreateTableRequestDto): Promise <CreateTableResponse> {
-    await this.tableRepository.save(table);    
-    
-    return { status: HttpStatus.CREATED, errors: null};
+  public async createTable(
+    table: CreateTableRequestDto,
+  ): Promise<CreateTableResponse> {
+    await this.tableRepository.save(table);
+
+    return { status: HttpStatus.CREATED, errors: null };
   }
 
-  public async getTablesByName ( {name} : GetTablesByNameDto): Promise <GetTablesByNameResponse> {
+  public async getTablesByName({
+    name,
+  }: GetTablesByNameDto): Promise<GetTablesByNameResponse> {
     const table: Table = await this.tableRepository.findOne({
       where: {
         name,
       },
     });
 
-    if(!table) {
-      return { status: HttpStatus.NOT_FOUND, errors: [`Table with name ${name} not found`], table: null }
+    if (!table) {
+      return {
+        status: HttpStatus.NOT_FOUND,
+        errors: [`Table with name ${name} not found`],
+        table: null,
+      };
     }
 
     const tableProto: TableProto = {
@@ -67,64 +130,97 @@ export class OrderService {
       quantity: table.quantity,
       state: table.state,
     };
-    
-    return { status: HttpStatus.OK, errors: null, table: tableProto};
+
+    return { status: HttpStatus.OK, errors: null, table: tableProto };
   }
 
-  public async getAllTables () : Promise <GetAllTablesResponse>{
-
+  public async getAllTables(): Promise<GetAllTablesResponse> {
     const tables: Table[] = await this.tableRepository.find();
 
-    if(!tables) {
-      return { status: HttpStatus.NOT_FOUND, errors: [`Tables are not found`], tables: null }
+    if (!tables) {
+      return {
+        status: HttpStatus.NOT_FOUND,
+        errors: [`Tables are not found`],
+        tables: null,
+      };
     }
 
-    return { status: HttpStatus.OK, errors: null, tables: tables};
+    return { status: HttpStatus.OK, errors: null, tables: tables };
   }
 
-  public async updateTableState ( {id,quantity,state}: UpdateTableStateDto ) : Promise <UpdateTableStateResponse> {
-    const table: Table = await this.tableRepository.findOne( { where: {id} } );
+  public async updateTableState({
+    id,
+    quantity,
+    state,
+  }: UpdateTableStateDto): Promise<UpdateTableStateResponse> {
+    const table: Table = await this.tableRepository.findOne({ where: { id } });
 
-    if(!table) {
-      return { status: HttpStatus.NOT_FOUND, errors: [`Table with id ${id} is not found`]}
+    if (!table) {
+      return {
+        status: HttpStatus.NOT_FOUND,
+        errors: [`Table with id ${id} is not found`],
+      };
     }
 
     table.quantity = quantity;
     table.state = state;
-    
+
     await this.tableRepository.save(table);
 
-    return { status: HttpStatus.OK, errors: null};
+    return { status: HttpStatus.OK, errors: null };
   }
 
-  public async createOrder({ products, userId, nameTable, email }: CreateOrderRequestDto): Promise<CreateOrderResponse> {
+  public async createOrder({
+    products,
+    userId,
+    nameTable,
+    email,
+  }: CreateOrderRequestDto): Promise<CreateOrderResponse> {
     try {
       const userRequest: AuthGetUserRequest = { userId };
-      const userResponse: AuthGetUserResponse = await lastValueFrom(this.userService.getUser(userRequest));
+      const userResponse: AuthGetUserResponse = await lastValueFrom(
+        this.userService.getUser(userRequest),
+      );
       if (userResponse.status !== HttpStatus.OK) {
-        return { status: HttpStatus.BAD_REQUEST, errors: [`User with ID ${userId} not found`], id: null };
+        return {
+          status: HttpStatus.BAD_REQUEST,
+          errors: [`User with ID ${userId} not found`],
+          id: null,
+        };
       }
-  
-      const table = await this.tableRepository.findOne({ where: { name: nameTable }});
+
+      const table = await this.tableRepository.findOne({
+        where: { name: nameTable },
+      });
       if (!table) {
-        return { status: HttpStatus.NOT_FOUND, errors: [`Table ${nameTable} is not found`], id: null };
+        return {
+          status: HttpStatus.NOT_FOUND,
+          errors: [`Table ${nameTable} is not found`],
+          id: null,
+        };
       }
-  
+
       const order = new Order();
       order.userId = userId;
       order.table = table;
       order.email = email;
-  
+
       const orderItems: OrderItem[] = [];
       let totalPrice = 0;
-  
+
       for (const product of products) {
         const findOneRequest: FindOneRequest = { id: product.productId };
-        const findOneResponse: FindOneResponse = await lastValueFrom(this.productService.findOne(findOneRequest));
+        const findOneResponse: FindOneResponse = await lastValueFrom(
+          this.productService.findOne(findOneRequest),
+        );
         if (findOneResponse.status !== HttpStatus.OK) {
-          return { status: HttpStatus.BAD_REQUEST, errors: [`Product with ID ${product.productId} not found`], id: null };
+          return {
+            status: HttpStatus.BAD_REQUEST,
+            errors: [`Product with ID ${product.productId} not found`],
+            id: null,
+          };
         }
-  
+
         const orderItem = new OrderItem();
         orderItem.productId = product.productId;
         orderItem.quantity = product.quantity;
@@ -134,31 +230,41 @@ export class OrderService {
         orderItem.totalPrice = findOneResponse.data.price * product.quantity;
         orderItem.order = order;
         orderItems.push(orderItem);
-  
+
         totalPrice += orderItem.totalPrice;
       }
-  
+
       order.items = orderItems;
       order.totalPrice = totalPrice;
-  
+
       await this.repository.save(order);
-  
+
       return { status: HttpStatus.CREATED, errors: null, id: order.id };
     } catch (error) {
       throw error;
     }
   }
-  
 
-  public async getOrder({ orderId }: GetOrderRequest): Promise<GetOrderResponse> {
-    const order = await this.repository.findOne({ where: { id: orderId }, relations: ['table','items'] });
+  public async getOrder({
+    orderId,
+  }: GetOrderRequest): Promise<GetOrderResponse> {
+    const order = await this.repository.findOne({
+      where: { id: orderId },
+      relations: ['table', 'items'],
+    });
 
     if (!order) {
-      return { status: HttpStatus.NOT_FOUND, errors: ['Order not found'], order: null };
+      return {
+        status: HttpStatus.NOT_FOUND,
+        errors: ['Order not found'],
+        order: null,
+      };
     }
 
     const userRequest: AuthGetUserRequest = { userId: order.userId };
-    const userResponse: AuthGetUserResponse = await lastValueFrom(this.userService.getUser(userRequest));
+    const userResponse: AuthGetUserResponse = await lastValueFrom(
+      this.userService.getUser(userRequest),
+    );
 
     let user: User = null;
 
@@ -172,32 +278,97 @@ export class OrderService {
       userId: order.userId,
       table: order.table,
       totalPrice: order.totalPrice,
-      items: await Promise.all(order.items.map(async item => {
-        const findOneRequest: FindOneRequest = { id: item.productId };
-        const findOneResponse: FindOneResponse = await lastValueFrom(this.productService.findOne(findOneRequest));
+      items: await Promise.all(
+        order.items.map(async (item) => {
+          const findOneRequest: FindOneRequest = { id: item.productId };
+          const findOneResponse: FindOneResponse = await lastValueFrom(
+            this.productService.findOne(findOneRequest),
+          );
 
-        return {
-          productId: item.productId,
-          quantity: item.quantity,
-          modifications: item.modifications,
-          productName: findOneResponse.data.name,
-          pricePerUnit: findOneResponse.data.price,
-          totalPrice: findOneResponse.data.price * item.quantity
-        }
-      })),
+          return {
+            productId: item.productId,
+            quantity: item.quantity,
+            modifications: item.modifications,
+            productName: findOneResponse.data.name,
+            pricePerUnit: findOneResponse.data.price,
+            totalPrice: findOneResponse.data.price * item.quantity,
+          };
+        }),
+      ),
       user,
-      email: order.email
+      email: order.email,
     };
 
     return { status: HttpStatus.OK, errors: null, order: orderProto };
   }
 
-  public async getAllOrders(_: GetAllOrdersRequest): Promise<GetAllOrdersResponse> {
-    const orders = await this.repository.find({ relations: ['table','items'] });
+  public async updateOrder({
+    orderId,
+    userId,
+    nameTable,
+    email,
+  }: UpdateOrderRequest): Promise<UpdateOrderResponse> {
+    const order = await this.repository.findOne({
+      where: { id: orderId },
+      relations: ['table', 'items'],
+    });
+
+    if (!order) {
+      return {
+        status: HttpStatus.NOT_FOUND,
+        errors: [`Order with ID ${orderId} not found`],
+        order: null,
+      };
+    }
+
+    const userRequest: AuthGetUserRequest = { userId };
+    const userResponse: AuthGetUserResponse = await lastValueFrom(
+      this.userService.getUser(userRequest),
+    );
+
+    if (userResponse.status !== HttpStatus.OK) {
+      return {
+        status: HttpStatus.BAD_REQUEST,
+        errors: [`User with ID ${userId} not found`],
+        order: null,
+      };
+    }
+
+    const table = await this.tableRepository.findOne({
+      where: { name: nameTable },
+    });
+
+    if (!table) {
+      return {
+        status: HttpStatus.NOT_FOUND,
+        errors: [`Table ${nameTable} not found`],
+        order: null,
+      };
+    }
+
+    order.userId = userId;
+    order.table = table;
+    order.email = email;
+
+    await this.repository.save(order);
+
+    const updatedOrder = await this.getOrder({ orderId });
+
+    return { status: HttpStatus.OK, errors: null, order: updatedOrder.order };
+  }
+
+  public async getAllOrders(
+    _: GetAllOrdersRequest,
+  ): Promise<GetAllOrdersResponse> {
+    const orders = await this.repository.find({
+      relations: ['table', 'items'],
+    });
     const orderProtos: OrderProto[] = await Promise.all(
       orders.map(async (order) => {
         const userRequest: AuthGetUserRequest = { userId: order.userId };
-        const userResponse: AuthGetUserResponse = await lastValueFrom(this.userService.getUser(userRequest));
+        const userResponse: AuthGetUserResponse = await lastValueFrom(
+          this.userService.getUser(userRequest),
+        );
 
         let user: User = null;
 
@@ -206,7 +377,7 @@ export class OrderService {
         }
 
         return { ...order, user };
-      })
+      }),
     );
 
     return { status: HttpStatus.OK, errors: null, orders: orderProtos };
@@ -214,56 +385,90 @@ export class OrderService {
 
   public async getUser({ userId }: GetUserRequest): Promise<GetUserResponse> {
     const userRequest: AuthGetUserRequest = { userId };
-    const userResponse: AuthGetUserResponse = await lastValueFrom(this.userService.getUser(userRequest));
+    const userResponse: AuthGetUserResponse = await lastValueFrom(
+      this.userService.getUser(userRequest),
+    );
 
     if (userResponse.status !== HttpStatus.OK) {
-      return { status: HttpStatus.BAD_REQUEST, errors: [`User with ID ${userId} not found`], user: null };
+      return {
+        status: HttpStatus.BAD_REQUEST,
+        errors: [`User with ID ${userId} not found`],
+        user: null,
+      };
     }
 
     return { status: HttpStatus.OK, errors: null, user: userResponse.user };
   }
 
-  public async getAllSales (_: GetAllSalesRequest): Promise <GetAllSalesResponse> {
-    const sales: Sale[] = await this.saleRepository.find( {relations: ['products']});
+  public async getAllSales(
+    _: GetAllSalesRequest,
+  ): Promise<GetAllSalesResponse> {
+    const sales: Sale[] = await this.saleRepository.find({
+      relations: ['products'],
+    });
 
-    if(!sales) {
-      return { status: HttpStatus.NOT_FOUND, errors: [`Sales are not found`], sales: null }
+    if (!sales) {
+      return {
+        status: HttpStatus.NOT_FOUND,
+        errors: [`Sales are not found`],
+        sales: null,
+      };
     }
-    
-    return { status: HttpStatus.OK, errors: null, sales: sales};
+
+    return { status: HttpStatus.OK, errors: null, sales: sales };
   }
 
-  public async getSalesByUser ({userName}: GetSalesByUserDto): Promise <GetSalesByUserResponse> {
+  public async getSalesByUser({
+    userName,
+  }: GetSalesByUserDto): Promise<GetSalesByUserResponse> {
     const sales: Sale[] = await this.saleRepository.find({
       where: {
         userName: Like(`%${userName}%`),
       },
-      relations: ['products']
+      relations: ['products'],
     });
-    
-    if(!sales) {
-      return { status: HttpStatus.NOT_FOUND, errors: [`Sales are not found`], sales: null }
+
+    if (!sales) {
+      return {
+        status: HttpStatus.NOT_FOUND,
+        errors: [`Sales are not found`],
+        sales: null,
+      };
     }
-    
-    return { status: HttpStatus.OK, errors: null, sales: sales};
+
+    return { status: HttpStatus.OK, errors: null, sales: sales };
   }
 
-  public async getSalesByDate ({date}: GetSalesByDateDto): Promise <GetSalesByUserResponse> {
+  public async getSalesByDate({
+    date,
+  }: GetSalesByDateDto): Promise<GetSalesByUserResponse> {
     const sales: Sale[] = await this.saleRepository.find({
       where: {
         date: Like(`%${date}%`),
       },
-      relations: ['products']
+      relations: ['products'],
     });
-    
-    if(!sales) {
-      return { status: HttpStatus.NOT_FOUND, errors: [`Sales are not found`], sales: null }
+
+    if (!sales) {
+      return {
+        status: HttpStatus.NOT_FOUND,
+        errors: [`Sales are not found`],
+        sales: null,
+      };
     }
-    
-    return { status: HttpStatus.OK, errors: null, sales: sales};
+
+    return { status: HttpStatus.OK, errors: null, sales: sales };
   }
 
-  public async createSale({ userName, tableName, date, tip, totalPrice, products, email }: CreateSaleDto): Promise<CreateSaleResponse> {
+  public async createSale({
+    userName,
+    tableName,
+    date,
+    tip,
+    totalPrice,
+    products,
+    email,
+  }: CreateSaleDto): Promise<CreateSaleResponse> {
     const sale = {
       userName,
       tableName,
@@ -272,17 +477,21 @@ export class OrderService {
       totalPrice,
       products,
     };
-  
+
     const to = email;
-    const subject = "Comprobante de pedido";
-  
-    const productList = products.map((product) => `
+    const subject = 'Comprobante de pedido';
+
+    const productList = products
+      .map(
+        (product) => `
       <tr>
         <td>Producto ${product.productId}</td>
         <td>${product.quantity}</td>
       </tr>
-    `).join('');
-  
+    `,
+      )
+      .join('');
+
     const htmlContent = `
       <head>
         <meta charset="UTF-8">
@@ -382,12 +591,83 @@ export class OrderService {
         </div>
       </body>
     `;
-  
+
     await this.emailService.sendEmail(to, subject, htmlContent);
-    
+
     await this.saleRepository.save(sale);
-  
+
     return { status: HttpStatus.CREATED, errors: null };
   }
 
+  public async deleteOrderItem({
+    orderId,
+    productId,
+  }: DeleteOrderItemRequest): Promise<DeleteOrderItemResponse> {
+    const order = await this.repository.findOne({
+      where: { id: orderId },
+      relations: ['items'],
+    });
+
+    if (!order) {
+      return {
+        status: HttpStatus.NOT_FOUND,
+        errors: [`Order with ID ${orderId} not found`],
+      };
+    }
+
+    // Fetch product details
+    const findOneRequest: FindOneRequest = { id: productId };
+    const findOneResponse = await lastValueFrom(
+      this.productService.findOne(findOneRequest),
+    );
+
+    if (findOneResponse.status !== HttpStatus.OK) {
+      return {
+        status: HttpStatus.BAD_REQUEST,
+        errors: [`Product with ID ${productId} not found`],
+      };
+    }
+
+    const product = findOneResponse.data;
+
+    const itemIndex = order.items.findIndex(
+      (item) => item.productId === productId,
+    );
+    if (itemIndex === -1) {
+      return {
+        status: HttpStatus.NOT_FOUND,
+        errors: [`Product with ID ${productId} not found in order`],
+      };
+    }
+
+    const [item] = order.items.splice(itemIndex, 1);
+    await this.itemRepository.remove(item);
+
+    // Update product stock
+    const updateProductRequest: UpdateProductRequest = {
+      productId: productId,
+      product: {
+        ...product,
+        stock: product.stock + item.quantity, // Add the quantity back to stock
+      },
+    };
+
+    const updateProductResponse = await lastValueFrom(
+      this.productService.updateProduct(updateProductRequest),
+    );
+
+    if (updateProductResponse.status !== HttpStatus.OK) {
+      return {
+        status: updateProductResponse.status,
+        errors: [
+          `Failed to update product stock: ${updateProductResponse.error}`,
+        ],
+      };
+    }
+
+    order.totalPrice -= item.totalPrice;
+    await this.repository.save(order);
+
+    return { status: HttpStatus.OK, errors: null };
+  }
 }
