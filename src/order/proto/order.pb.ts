@@ -205,6 +205,20 @@ export interface DeleteOrderItemResponse {
   errors: string[];
 }
 
+
+export interface UpdateOrderRequest {
+  orderId: number;
+  products: OrderItem[];
+  userId: number;
+  nameTable: string;
+  email: string;
+}
+
+export interface UpdateOrderResponse {
+  status: number;
+  errors: string[];
+}
+
 export const ORDER_PACKAGE_NAME = "order";
 
 export interface OrderServiceClient {

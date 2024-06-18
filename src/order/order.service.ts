@@ -103,7 +103,7 @@ export class OrderService {
     table: CreateTableRequestDto,
   ): Promise<CreateTableResponse> {
     await this.tableRepository.save(table);    
-    
+   
     return { status: HttpStatus.CREATED, errors: null };
   }
 
@@ -191,7 +191,6 @@ export class OrderService {
           id: null,
         };
       }
-  
       const table = await this.tableRepository.findOne({
         where: { name: nameTable },
       });
@@ -202,15 +201,15 @@ export class OrderService {
           id: null,
         };
       }
-  
+
       const order = new Order();
       order.userId = userId;
       order.table = table;
       order.email = email;
-  
+
       const orderItems: OrderItem[] = [];
       let totalPrice = 0;
-  
+
       for (const product of products) {
         const findOneRequest: FindOneRequest = { id: product.productId };
         const findOneResponse: FindOneResponse = await lastValueFrom(
@@ -223,7 +222,7 @@ export class OrderService {
             id: null,
           };
         }
-  
+
         const orderItem = new OrderItem();
         orderItem.productId = product.productId;
         orderItem.quantity = product.quantity;
@@ -233,21 +232,21 @@ export class OrderService {
         orderItem.totalPrice = findOneResponse.data.price * product.quantity;
         orderItem.order = order;
         orderItems.push(orderItem);
-  
+
         totalPrice += orderItem.totalPrice;
       }
-  
+
       order.items = orderItems;
       order.totalPrice = totalPrice;
-  
+
       await this.repository.save(order);
-  
+
       return { status: HttpStatus.CREATED, errors: null, id: order.id };
     } catch (error) {
       throw error;
     }
   }
-  
+
   public async getOrder({
     orderId,
   }: GetOrderRequest): Promise<GetOrderResponse> {
@@ -444,7 +443,7 @@ export class OrderService {
         sales: null,
       };
     }
-    
+
     return { status: HttpStatus.OK, errors: null, sales: sales };
   }
 
@@ -457,7 +456,7 @@ export class OrderService {
       },
       relations: ['products'],
     });
-    
+
     if (!sales) {
       return {
         status: HttpStatus.NOT_FOUND,
@@ -465,7 +464,7 @@ export class OrderService {
         sales: null,
       };
     }
-    
+
     return { status: HttpStatus.OK, errors: null, sales: sales };
   }
 
@@ -478,7 +477,7 @@ export class OrderService {
       },
       relations: ['products'],
     });
-    
+
     if (!sales) {
       return {
         status: HttpStatus.NOT_FOUND,
@@ -486,7 +485,7 @@ export class OrderService {
         sales: null,
       };
     }
-    
+
     return { status: HttpStatus.OK, errors: null, sales: sales };
   }
 
@@ -507,10 +506,10 @@ export class OrderService {
       totalPrice,
       products,
     };
-  
+
     const to = email;
     const subject = 'Comprobante de pedido';
-  
+
     const productList = products
       .map(
         (product) => `
@@ -523,7 +522,7 @@ export class OrderService {
     `,
       )
       .join('');
-  
+
     const htmlContent = `
       <head>
         <meta charset="UTF-8">
@@ -625,11 +624,11 @@ export class OrderService {
         </div>
       </body>
     `;
-  
+
     await this.emailService.sendEmail(to, subject, htmlContent);
-    
+
     await this.saleRepository.save(sale);
-  
+
     return { status: HttpStatus.CREATED, errors: null };
   }
 
@@ -705,5 +704,3 @@ export class OrderService {
     return { status: HttpStatus.OK, errors: null };
   }
 
- 
-}
