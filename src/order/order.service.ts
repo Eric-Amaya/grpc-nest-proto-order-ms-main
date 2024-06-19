@@ -516,8 +516,8 @@ export class OrderService {
       <tr>
         <td>${product.productName}</td>
         <td>${product.quantity}</td>
-        <td>${product.pricePerUnit}</td>
-        <td>${product.totalPrice}</td>
+        <td>${product.pricePerUnit.toLocaleString('es-CL', {style: 'currency', currency: 'CLP'})}</td>
+        <td>${product.totalPrice.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</td>
       </tr>
     `,
       )
@@ -601,7 +601,7 @@ export class OrderService {
             <p><strong>Atendido por:</strong> ${userName}</p>
             <p><strong>Mesa:</strong> ${tableName}</p>
             <p><strong>Fecha:</strong> ${date}</p>
-            <p><strong>Propina:</strong> ${tip} (10% del total)</p>
+            <p><strong>Propina:</strong> ${tip.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })} (10%)</p>
             <h2>Productos</h2>
             <table class="table">
               <thead>
@@ -616,7 +616,7 @@ export class OrderService {
                 ${productList}
               </tbody>
             </table>
-            <p><strong>Total de la Orden:</strong> ${totalPrice}</p>
+            <p><strong>Total de la Orden:</strong> ${totalPrice.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</p>
           </div>
           <div class="footer">
             <p>Gracias por su visita. ¡Esperamos verlo pronto!</p>
