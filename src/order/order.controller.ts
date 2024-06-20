@@ -39,90 +39,90 @@ export class OrderController {
   private readonly service: OrderService;
 
   @GrpcMethod(ORDER_SERVICE_NAME, 'CreateTable')
-  private createTable(
+  public createTable(
     payload: CreateTableRequest,
   ): Promise<CreateTableResponse> {
     return this.service.createTable(payload);
   }
 
   @GrpcMethod(ORDER_SERVICE_NAME, 'GetTablesByName')
-  private getTablesByName(
+  public getTablesByName(
     payload: GetTablesByNameRequest,
   ): Promise<GetTablesByNameResponse> {
     return this.service.getTablesByName(payload);
   }
 
   @GrpcMethod(ORDER_SERVICE_NAME, 'GetAllTables')
-  private getAllTables(): Promise<GetAllTablesResponse> {
+  public getAllTables(): Promise<GetAllTablesResponse> {
     return this.service.getAllTables();
   }
 
   @GrpcMethod(ORDER_SERVICE_NAME, 'UpdateTableState')
-  private updateTableState(
+  public updateTableState(
     payload: UpdateTableStateRequest,
   ): Promise<UpdateTableStateResponse> {
     return this.service.updateTableState(payload);
   }
 
   @GrpcMethod(ORDER_SERVICE_NAME, 'CreateOrder')
-  private createOrder(
+  public createOrder(
     payload: CreateOrderRequest,
   ): Promise<CreateOrderResponse> {
     return this.service.createOrder(payload);
   }
 
   @GrpcMethod(ORDER_SERVICE_NAME, 'GetUser')
-  private getUser(payload: GetUserRequest): Promise<GetUserResponse> {
+  public getUser(payload: GetUserRequest): Promise<GetUserResponse> {
     return this.service.getUser(payload);
   }
 
   @GrpcMethod(ORDER_SERVICE_NAME, 'GetAllOrders')
-  private getAllOrders(
+  public getAllOrders(
     payload: GetAllOrdersRequest,
   ): Promise<GetAllOrdersResponse> {
     return this.service.getAllOrders(payload);
   }
 
   @GrpcMethod(ORDER_SERVICE_NAME, 'GetOrder')
-  private getOrder(payload: GetOrderRequest): Promise<GetOrderResponse> {
+  public getOrder(payload: GetOrderRequest): Promise<GetOrderResponse> {
     return this.service.getOrder(payload);
   }
 
   @GrpcMethod(ORDER_SERVICE_NAME, 'CreateSale')
-  private createSale(payload: CreateSaleRequest): Promise<CreateSaleResponse> {
+  public createSale(payload: CreateSaleRequest): Promise<CreateSaleResponse> {
     return this.service.createSale(payload);
   }
 
   @GrpcMethod(ORDER_SERVICE_NAME, 'GetAllSales')
-  private getAllSales(
+  public getAllSales(
     payload: GetAllSalesRequest,
   ): Promise<GetAllSalesResponse> {
     return this.service.getAllSales(payload);
   }
 
   @GrpcMethod(ORDER_SERVICE_NAME, 'GetSalesByUser')
-  private getSalesByUser(
+  public getSalesByUser(
     payload: GetSalesByUserRequest,
   ): Promise<GetSalesByUserResponse> {
     return this.service.getSalesByUser(payload);
   }
 
   @GrpcMethod(ORDER_SERVICE_NAME, 'GetSalesByDate')
-  private getSalesByDate(
+  public getSalesByDate(
     payload: GetSalesByDateRequest,
   ): Promise<GetSalesByDateResponse> {
     return this.service.getSalesByDate(payload);
   }
 
   @GrpcMethod(ORDER_SERVICE_NAME, 'DeleteOrderItem')
-  private deleteOrderItem(
+  public deleteOrderItem(
     payload: DeleteOrderItemRequest,
   ): Promise<DeleteOrderItemResponse> {
     return this.service.deleteOrderItem(payload);
   }
 
   @GrpcMethod(ORDER_SERVICE_NAME, 'UpdateOrder')
-  private updateOrder(
+  public updateOrder(
     payload: UpdateOrderRequest,
   ): Promise<UpdateOrderResponse> {
     return this.service.updateOrder(payload);
